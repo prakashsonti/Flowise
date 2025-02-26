@@ -68,35 +68,65 @@ services:
     pgadmin:
         image: dpage/pgadmin4
         environment:
-          - PGADMIN_DEFAULT_EMAIL=psonti@hotmail.com
-          - PGADMIN_DEFAULT_PASSWORD=@Mypgadminpwd
+          - PGADMIN_DEFAULT_EMAIL=${PGADMIN_DEFAULT_EMAIL}
+          - PGADMIN_DEFAULT_PASSWORD=${PGADMIN_DEFAULT_PASSWORD}
         ports:
           - "5050:80"
         depends_on:
           - postgres
           
+          
+    postgrest:
+        image: postgrest/postgrest
+        container_name: postgrest_stock_api
+        environment:
+            - PGRST_DB_URI=${PGRST_DB_URI}
+            - PGRST_DB_SCHEMA=${PGRST_DB_SCHEMA}
+            - PGRST_DB_ANON_ROLE=${PGRST_DB_ANON_ROLE}
+        ports:
+            - "3050:3000"
+        depends_on:
+          - postgres          
 
-    ollama:
-      image: ollama/ollama:latest
-      container_name: ollama
-      volumes:
-        - ollama_data:/root/.ollama
+    #ollama:
+    #  image: ollama/ollama:latest
+    #  container_name: ollama
+    #  volumes:
+    #    - ollama_data:/root/.ollama
+    #  ports:
+    #    - 11434:11434
+    #  restart: unless-stopped
+    # 
+    #ollama-webui:
+    #  image: ghcr.io/open-webui/open-webui:main
+    #  container_name: ollama-webui
+    #  ports:
+    #    - 3600:8080
+    #  environment:
+    #    - OLLAMA_BASE_URL=http://ollama:11434
+    #  depends_on:
+    #    - ollama
+    #  restart: unless-stopped
+
+    stockapi:
+      image: stockapi:0.1
       ports:
-        - 11434:11434
-      restart: unless-stopped
-  
-    ollama-webui:
-      image: ghcr.io/open-webui/open-webui:main
-      container_name: ollama-webui
-      ports:
-        - 3600:8080
+        - "5000:5000"
       environment:
-        - OLLAMA_BASE_URL=http://ollama:11434
+        - SQLALCHEMY_DATABASE_URI=${SQLALCHEMY_DATABASE_URI_STOCK}
+      container_name: stockapi
       depends_on:
-        - ollama
-      restart: unless-stopped
+        - postgres
 
-        
+    medapi:
+      image: medapi:0.1
+      ports:
+        - "5001:5001"
+      environment:
+         - SQLALCHEMY_DATABASE_URI=${SQLALCHEMY_DATABASE_URI_MED}
+      container_name: medapi
+      depends_on:
+        - postgres                  
 
 volumes:
   postgres_data:
