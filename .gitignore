@@ -105,3 +105,4 @@
 *.smime
 *.vsix
 docker/airflow/dags/__pycache__/*.pyc
+**/__pycache__/

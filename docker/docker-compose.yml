@@ -132,8 +132,42 @@ services:
          - SQLALCHEMY_DATABASE_URI=${SQLALCHEMY_DATABASE_URI_MED}
       container_name: medapi
       depends_on:
-        - postgres                  
+        - postgres   
+        
+    airflow:
+      image: apache/airflow:latest
+      restart: always
+      environment:
+        - AIRFLOW__CORE__EXECUTOR=LocalExecutor
+        - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=${SQLALCHEMY_DATABASE_URI_AIRFLOW}
+        - AIRFLOW__WEBSERVER__RBAC=True
+        - AIRFLOW__CORE__LOAD_EXAMPLES=False
+      depends_on:
+        - postgres
+      volumes:
+        - ./airflow:/opt/airflow
+        - ./airflow/logs:/opt/airflow/logs
+      ports:
+        - "8080:8080"
+      command: ["airflow", "standalone"]
+      
+      
+
+    portainer:
+      image: portainer/portainer-ce:latest
+      container_name: portainer
+      restart: unless-stopped
+      security_opt:
+        - no-new-privileges:true
+      volumes:
+        - /var/run/docker.sock:/var/run/docker.sock
+        - portainer_data:/data
+      ports:
+        - 9000:9000
+  
+                           
 
 volumes:
   postgres_data:
   ollama_data:
+  portainer_data:
