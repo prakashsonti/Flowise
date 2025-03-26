@@ -104,3 +104,4 @@
 ## S/MIME message
 *.smime
 *.vsix
+docker/airflow/dags/__pycache__/*.pyc
