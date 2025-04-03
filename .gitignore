@@ -107,3 +107,100 @@
 docker/airflow/dags/__pycache__/*.pyc
 **/__pycache__/
 __pycache__/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Django
+*.log
+*.pot
+*.pyc
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+media
+
+# Secret environment variables
+.env
+
+# Static files
+staticfiles/
+staticfiles_nics/
+
+
+# IDE files
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Docker
+docker-compose.override.yml
+
+# Virtual environment
+venv/
+.venv/
+ENV/
+
+# Compiled JavaScript
+*.min.js
+
+# Node modules
+node_modules/
+
+# System files
+.DS_Store
+Thumbs.db
+
+# Coverage reports
+htmlcov/
+.tox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*,cover
+.hypothesis/
+
+# Pytest
+.pytest_cache/
+
+# pyenv
+.python-version
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# dotenv
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# certs file
+certs/
+docker/certbot/
+docker/staticfiles/
+
+#Continue
+.continue
