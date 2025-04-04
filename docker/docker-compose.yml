@@ -38,8 +38,6 @@ services:
             - WORKER_CONCURRENCY=${WORKER_CONCURRENCY}
             - QUEUE_NAME=${QUEUE_NAME}
             - QUEUE_REDIS_EVENT_STREAM_MAX_LEN=${QUEUE_REDIS_EVENT_STREAM_MAX_LEN}
-            - REMOVE_ON_AGE=${REMOVE_ON_AGE}
-            - REMOVE_ON_COUNT=${REMOVE_ON_COUNT}
             - REDIS_URL=${REDIS_URL}
             - REDIS_HOST=${REDIS_HOST}
             - REDIS_PORT=${REDIS_PORT}
@@ -56,6 +54,7 @@ services:
             interval: 30s
             timeout: 10s
             retries: 3
+
         volumes:
             - ~/.flowise:/root/.flowise
         depends_on:
@@ -94,26 +93,6 @@ services:
             - "3050:3000"
         depends_on:
           - postgres          
-
-    #ollama:
-    #  image: ollama/ollama:latest
-    #  container_name: ollama
-    #  volumes:
-    #    - ollama_data:/root/.ollama
-    #  ports:
-    #    - 11434:11434
-    #  restart: unless-stopped
-    # 
-    #ollama-webui:
-    #  image: ghcr.io/open-webui/open-webui:main
-    #  container_name: ollama-webui
-    #  ports:
-    #    - 3600:8080
-    #  environment:
-    #    - OLLAMA_BASE_URL=http://ollama:11434
-    #  depends_on:
-    #    - ollama
-    #  restart: unless-stopped
 
     stockapi:
       image: stockapi:0.1
