@@ -205,3 +205,6 @@ docker/staticfiles/
 #Continue
 .continue
 docker/airflow/airflow-webserver.pid
+
+#packages
+packages/server/*

@@ -1,0 +1,208 @@
+#version: '3.1'
+
+services:
+    flowise:
+        image: flowiseai/flowise
+        restart: always
+        environment:
+            - PORT=${PORT}
+            - CORS_ORIGINS=${CORS_ORIGINS}
+            - IFRAME_ORIGINS=${IFRAME_ORIGINS}
+            - FLOWISE_USERNAME=${FLOWISE_USERNAME}
+            - FLOWISE_PASSWORD=${FLOWISE_PASSWORD}
+            - FLOWISE_FILE_SIZE_LIMIT=${FLOWISE_FILE_SIZE_LIMIT}
+            - DEBUG=${DEBUG}
+            - DATABASE_PATH=${DATABASE_PATH}
+            - DATABASE_TYPE=${DATABASE_TYPE}
+            - DATABASE_PORT=${DATABASE_PORT}
+            - DATABASE_HOST=${DATABASE_HOST}
+            - DATABASE_NAME=${DATABASE_NAME}
+            - DATABASE_USER=${DATABASE_USER}
+            - DATABASE_PASSWORD=${DATABASE_PASSWORD}
+            - DATABASE_SSL=${DATABASE_SSL}
+            - DATABASE_SSL_KEY_BASE64=${DATABASE_SSL_KEY_BASE64}
+            - APIKEY_STORAGE_TYPE=${APIKEY_STORAGE_TYPE}
+            - APIKEY_PATH=${APIKEY_PATH}
+            - SECRETKEY_PATH=${SECRETKEY_PATH}
+            - FLOWISE_SECRETKEY_OVERWRITE=${FLOWISE_SECRETKEY_OVERWRITE}
+            - LOG_LEVEL=${LOG_LEVEL}
+            - LOG_PATH=${LOG_PATH}
+            - BLOB_STORAGE_PATH=${BLOB_STORAGE_PATH}
+            - DISABLE_FLOWISE_TELEMETRY=${DISABLE_FLOWISE_TELEMETRY}
+            - MODEL_LIST_CONFIG_JSON=${MODEL_LIST_CONFIG_JSON}
+            - GLOBAL_AGENT_HTTP_PROXY=${GLOBAL_AGENT_HTTP_PROXY}
+            - GLOBAL_AGENT_HTTPS_PROXY=${GLOBAL_AGENT_HTTPS_PROXY}
+            - GLOBAL_AGENT_NO_PROXY=${GLOBAL_AGENT_NO_PROXY}
+            - DISABLED_NODES=${DISABLED_NODES}
+            - MODE=${MODE}
+            - WORKER_CONCURRENCY=${WORKER_CONCURRENCY}
+            - QUEUE_NAME=${QUEUE_NAME}
+            - QUEUE_REDIS_EVENT_STREAM_MAX_LEN=${QUEUE_REDIS_EVENT_STREAM_MAX_LEN}
+            - REDIS_URL=${REDIS_URL}
+            - REDIS_HOST=${REDIS_HOST}
+            - REDIS_PORT=${REDIS_PORT}
+            - REDIS_PASSWORD=${REDIS_PASSWORD}
+            - REDIS_USERNAME=${REDIS_USERNAME}
+            - REDIS_TLS=${REDIS_TLS}
+            - REDIS_CERT=${REDIS_CERT}
+            - REDIS_KEY=${REDIS_KEY}
+            - REDIS_CA=${REDIS_CA}
+        ports:
+            - '${PORT}:${PORT}'
+        healthcheck:
+            test: ["CMD", "wget", "--spider", "-q", "http://localhost:3000/health"]
+            interval: 30s
+            timeout: 10s
+            retries: 3
+
+        volumes:
+            - ~/.flowise:/root/.flowise
+        depends_on:
+            - postgres
+        entrypoint: /bin/sh -c "sleep 3; flowise start"
+        
+    postgres:
+        image: postgres:16-alpine
+        environment:
+          - POSTGRES_DB=${POSTGRES_DB}
+          - POSTGRES_USER=${POSTGRES_USER}
+          - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+        ports:
+          - "5432:5432"
+        volumes:
+          - postgres_data:/var/lib/postgresql/data
+    
+    
+    pgadmin:
+        image: dpage/pgadmin4
+        environment:
+          - PGADMIN_DEFAULT_EMAIL=${PGADMIN_DEFAULT_EMAIL}
+          - PGADMIN_DEFAULT_PASSWORD=${PGADMIN_DEFAULT_PASSWORD}
+        ports:
+          - "5050:80"
+        depends_on:
+          - postgres
+          
+          
+    postgrest:
+        image: postgrest/postgrest
+        container_name: postgrest_stock_api
+        environment:
+            - PGRST_DB_URI=${PGRST_DB_URI}
+            - PGRST_DB_SCHEMA=${PGRST_DB_SCHEMA}
+            - PGRST_DB_ANON_ROLE=${PGRST_DB_ANON_ROLE}
+        ports:
+            - "3050:3000"
+        depends_on:
+          - postgres          
+
+    #ollama:
+    #  image: ollama/ollama:latest
+    #  container_name: ollama
+    #  volumes:
+    #    - ollama_data:/root/.ollama
+    #  ports:
+    #    - 11434:11434
+    #  restart: unless-stopped
+    # 
+    #ollama-webui:
+    #  image: ghcr.io/open-webui/open-webui:main
+    #  container_name: ollama-webui
+    #  ports:
+    #    - 3600:8080
+    #  environment:
+    #    - OLLAMA_BASE_URL=http://ollama:11434
+    #  depends_on:
+    #    - ollama
+    #  restart: unless-stopped
+
+    stockapi:
+      image: stockapi:0.1
+      ports:
+        - "5000:5000"
+      environment:
+        - SQLALCHEMY_DATABASE_URI=${SQLALCHEMY_DATABASE_URI_STOCK}
+      container_name: stockapi
+      depends_on:
+        - postgres
+
+    medapi:
+      image: medapi:0.3
+      ports:
+        - "5001:5001"
+      environment:
+         - SQLALCHEMY_DATABASE_URI_MED=${SQLALCHEMY_DATABASE_URI_MED}
+      container_name: medapi
+      depends_on:
+        - postgres   
+
+    medweb:
+      image: medweb:0.2
+      container_name: medweb-app
+      restart: always
+      ports:
+        - "8000:8000"
+      depends_on:
+        - postgres
+      environment:
+        - DJANGO_SETTINGS_MODULE=dailylog.settings
+        - DATABASE_URL=postgres://${PGUSER}:${PGPASSWORD}@db:5432/${PGDATABASE}
+        - PGHOST=postgres
+        - PGUSER=${PGUSER}
+        - PGPASSWORD=${PGPASSWORD}
+        - PGDATABASE=${PGDATABASE}
+        - PGPORT=${PGPORT:-5432}
+        - SESSION_SECRET=${SESSION_SECRET}
+        - GOOGLE_OAUTH_CLIENT_ID=${GOOGLE_OAUTH_CLIENT_ID}
+        - GOOGLE_OAUTH_CLIENT_SECRET=${GOOGLE_OAUTH_CLIENT_SECRET}
+        # Additional Django settings
+        - DEBUG=${DEBUG:-False}
+        - ALLOWED_HOSTS=${ALLOWED_HOSTS:-localhost,127.0.0.1}
+        - CSRF_TRUSTED_ORIGINS=${CSRF_TRUSTED_ORIGINS:-}
+        # Email settings
+        - EMAIL_HOST=${EMAIL_HOST:-}
+        - EMAIL_PORT=${EMAIL_PORT:-587}
+        - EMAIL_USE_TLS=${EMAIL_USE_TLS:-True}
+        - EMAIL_HOST_USER=${EMAIL_HOST_USER:-}
+        - EMAIL_HOST_PASSWORD=${EMAIL_HOST_PASSWORD:-}
+      volumes:
+        - ./media:/app/media
+        - ./staticfiles:/app/staticfiles
+        
+    airflow:
+      image: apache/airflow:latest
+      restart: always
+      environment:
+        - AIRFLOW__CORE__EXECUTOR=LocalExecutor
+        - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=${SQLALCHEMY_DATABASE_URI_AIRFLOW}
+        - AIRFLOW__WEBSERVER__RBAC=True
+        - AIRFLOW__CORE__LOAD_EXAMPLES=False
+      depends_on:
+        - postgres
+      volumes:
+        - ./airflow:/opt/airflow
+        - ./airflow/logs:/opt/airflow/logs
+      ports:
+        - "8080:8080"
+      command: ["airflow", "standalone"]
+      
+      
+
+    portainer:
+      image: portainer/portainer-ce:latest
+      container_name: portainer
+      restart: unless-stopped
+      security_opt:
+        - no-new-privileges:true
+      volumes:
+        - /var/run/docker.sock:/var/run/docker.sock
+        - portainer_data:/data
+      ports:
+        - 9000:9000
+  
+                           
+
+volumes:
+  postgres_data:
+  ollama_data:
+  portainer_data:
