@@ -211,6 +211,7 @@ docker/airflow/airflow-webserver.pid
 
 #packages
 packages/server/*
+packages/server/bin/*
 
 docker/airflow/standalone_admin_password.txt
 docker/airflow/airflow-webserver.pid
