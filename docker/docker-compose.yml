@@ -67,6 +67,8 @@ services:
           - POSTGRES_DB=${POSTGRES_DB}
           - POSTGRES_USER=${POSTGRES_USER}
           - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+        ports:
+          - "5432:5432"
         volumes:
           - postgres_data:/var/lib/postgresql/data
     
@@ -81,18 +83,6 @@ services:
         depends_on:
           - postgres
           
-          
-    postgrest:
-        image: postgrest/postgrest
-        container_name: postgrest_stock_api
-        environment:
-            - PGRST_DB_URI=${PGRST_DB_URI}
-            - PGRST_DB_SCHEMA=${PGRST_DB_SCHEMA}
-            - PGRST_DB_ANON_ROLE=${PGRST_DB_ANON_ROLE}
-        ports:
-            - "3050:3000"
-        depends_on:
-          - postgres          
 
     stockapi:
       image: stockapi:0.1
@@ -105,18 +95,19 @@ services:
         - postgres
 
     medapi:
-      image: medapi:0.2
+      image: medapi:0.4
       ports:
         - "5001:5001"
       environment:
-         - SQLALCHEMY_DATABASE_URI=${SQLALCHEMY_DATABASE_URI_MED}
+         - SQLALCHEMY_DATABASE_URI_MED=${SQLALCHEMY_DATABASE_URI_MED}
+         - FIELD_ENCRYPTION_KEY=${FIELD_ENCRYPTION_KEY:-}
       container_name: medapi
       depends_on:
         - postgres   
 
     medweb:
-      image: medweb:0.2
-      container_name: medweb-app
+      image: medweb:0.6
+      container_name: medweb
       restart: always
       ports:
         - "8000:8000"
@@ -134,7 +125,7 @@ services:
         - GOOGLE_OAUTH_CLIENT_ID=${GOOGLE_OAUTH_CLIENT_ID}
         - GOOGLE_OAUTH_CLIENT_SECRET=${GOOGLE_OAUTH_CLIENT_SECRET}
         # Additional Django settings
-        - DEBUG=${DEBUG:-False}
+        - DEBUG=${DJANGO_DEBUG:-False}
         - ALLOWED_HOSTS=${ALLOWED_HOSTS:-localhost,127.0.0.1}
         - CSRF_TRUSTED_ORIGINS=${CSRF_TRUSTED_ORIGINS:-}
         # Email settings
@@ -143,9 +134,56 @@ services:
         - EMAIL_USE_TLS=${EMAIL_USE_TLS:-True}
         - EMAIL_HOST_USER=${EMAIL_HOST_USER:-}
         - EMAIL_HOST_PASSWORD=${EMAIL_HOST_PASSWORD:-}
+        # Open AI Settings and Replicate
+        - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+        - REPLICATE_API_KEY=${REPLICATE_API_KEY:-}
+        # Field encryption settings
+        - FIELD_ENCRYPTION_KEY=${FIELD_ENCRYPTION_KEY:-}
       volumes:
         - ./media:/app/media
-        - ./staticfiles:/app/staticfiles
+        #- ./staticfiles:/app/staticfiles  # removing this as this was overwriting what was in the container.
+        - staticfiles_data:/app/staticfiles  # Added this to persist static files
+
+
+    swimweb:
+      image: swimweb:0.1
+      container_name: swimweb
+      restart: always
+      #ports:
+      #  - "8001:8000"
+      # port is not exposed to the host, only to the nginx container
+      depends_on:
+        - postgres
+      environment:
+        - DJANGO_SETTINGS_MODULE=nics.settings
+        - DATABASE_URL=postgres://${PGUSER_SWIM}:${PGPASSWORD_SWIM}@db:5432/${PGDATABASE_SWIM}
+        - PGHOST=${PGHOST_SWIM}
+        - PGUSER=${PGUSER_SWIM}
+        - PGPASSWORD=${PGPASSWORD_SWIM}
+        - PGDATABASE=${PGDATABASE_SWIM}
+        - PGPORT=${PGPORT_SWIM:-5432}
+        - SESSION_SECRET=${SESSION_SECRET_SWIM}
+        - GOOGLE_OAUTH_CLIENT_ID=${GOOGLE_OAUTH_CLIENT_ID}
+        - GOOGLE_OAUTH_CLIENT_SECRET=${GOOGLE_OAUTH_CLIENT_SECRET}
+        # Additional Django settings
+        - DEBUG=${DJANGO_DEBUG:-False}
+        - ALLOWED_HOSTS=${ALLOWED_HOSTS_SWIM:-localhost,127.0.0.1}
+        - CSRF_TRUSTED_ORIGINS=${CSRF_TRUSTED_ORIGINS_SWIM:-}
+        # Email settings
+        - EMAIL_HOST=${EMAIL_HOST:-}
+        - EMAIL_PORT=${EMAIL_PORT:-587}
+        - EMAIL_USE_TLS=${EMAIL_USE_TLS:-True}
+        - EMAIL_HOST_USER=${EMAIL_HOST_USER:-}
+        - EMAIL_HOST_PASSWORD=${EMAIL_HOST_PASSWORD:-}
+        # Other app settings
+        - MAX_APPOINTMENTS_PER_STUDENT_PER_DAY=${MAX_APPOINTMENTS_PER_STUDENT_PER_DAY:-1}
+        
+        # Field encryption settings
+        - FIELD_ENCRYPTION_KEY=${FIELD_ENCRYPTION_KEY_SWIM:-}
+      volumes:
+        - ./media:/app/media
+        #- ./staticfiles:/app/staticfiles  # removing this as this was overwriting what was in the container.
+        - staticfiles_data_nics:/app/staticfiles_nics  # Added this to persist static files
         
     airflow:
       image: apache/airflow:latest
@@ -177,10 +215,38 @@ services:
         - portainer_data:/data
       ports:
         - 9000:9000
-  
-                           
+
+    nginx:
+        image: nginx:latest
+        container_name: nginx
+        restart: always
+        ports:
+            - "443:443"
+            - "80:80" # Added port 80 for serving the sample page
+        volumes:
+            - ./nginx/conf/nginx.conf:/etc/nginx/nginx.conf
+            - ./nginx/conf/cloudflare.conf:/etc/nginx/cloudflare.conf
+            - ./nginx/html:/usr/share/nginx/html
+            - ./certbot/www:/var/www/certbot
+            - ./certbot/conf:/etc/letsencrypt
+            - ./certs/cloudfare:/etc/nginx/certs/cloudfare # Added Cloudflare certs volume
+            - staticfiles_data:/staticfiles  # Added this to persist static files
+            - staticfiles_data_nics:/staticfiles_nics  # Added this to persist static files
+        depends_on:
+            - medweb
+            - swimweb
+
+    # Uncomment the following lines to enable Certbot for SSL certificate generation
+    # certbot:
+    #     image: certbot/certbot:latest
+    #     volumes:
+    #       - ./certbot/www:/var/www/certbot:rw
+    #       - ./certbot/conf:/etc/letsencrypt:rw
+    #     command: certonly --webroot --webroot-path=/var/www/certbot --email psonti@hotmail.com --agree-tos --no-eff-email -d sonti.tplinkdns.com 
 
 volumes:
   postgres_data:
   ollama_data:
   portainer_data:
+  staticfiles_data:
+  staticfiles_data_nics:

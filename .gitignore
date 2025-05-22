@@ -145,7 +145,10 @@ media
 # Static files
 staticfiles/
 staticfiles_nics/
-
+docker/airflow/dags/__pycache__/*.pyc
+docker/staticfiles/
+docker/staticfiles/admin/css
+docker/staticfiles_nics/
 
 # IDE files
 .idea/
@@ -208,3 +211,8 @@ docker/airflow/airflow-webserver.pid
 
 #packages
 packages/server/*
+
+docker/airflow/standalone_admin_password.txt
+docker/airflow/airflow-webserver.pid
+docker/airflow/airflow-scheduler.pid
+docker/airflow/airflow-worker.pid
