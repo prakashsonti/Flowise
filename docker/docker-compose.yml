@@ -178,6 +178,9 @@ services:
         # Other app settings
         - MAX_APPOINTMENTS_PER_STUDENT_PER_DAY=${MAX_APPOINTMENTS_PER_STUDENT_PER_DAY:-1}
         - PAYPAL_CLIENT_ID=${PAYPAL_CLIENT_ID:-}
+        - AUTH_NET_LOGIN_ID=${AUTH_NET_LOGIN_ID:-}
+        - AUTH_NET_TRANS_KEY=${AUTH_NET_TRANS_KEY:-}
+        - AUTH_NET_API_URL=${AUTH_NET_API_URL:-}
         
         # Field encryption settings
         - FIELD_ENCRYPTION_KEY=${FIELD_ENCRYPTION_KEY_SWIM:-}
