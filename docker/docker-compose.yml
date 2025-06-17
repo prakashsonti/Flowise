@@ -62,7 +62,8 @@ services:
         entrypoint: /bin/sh -c "sleep 3; flowise start"
         
     postgres:
-        image: postgres:16-alpine
+        #image: postgres:16-alpine
+        image: pgvector/pgvector:pg16
         environment:
           - POSTGRES_DB=${POSTGRES_DB}
           - POSTGRES_USER=${POSTGRES_USER}
@@ -106,7 +107,7 @@ services:
         - postgres   
 
     medweb:
-      image: medweb:0.6
+      image: medweb:0.7
       container_name: medweb
       restart: always
       ports:
@@ -146,7 +147,7 @@ services:
 
 
     swimweb:
-      image: swimweb:0.1
+      image: swimweb:0.2
       container_name: swimweb
       restart: always
       #ports:
@@ -178,12 +179,10 @@ services:
         # Other app settings
         - MAX_APPOINTMENTS_PER_STUDENT_PER_DAY=${MAX_APPOINTMENTS_PER_STUDENT_PER_DAY:-1}
         - PAYPAL_CLIENT_ID=${PAYPAL_CLIENT_ID:-}
-        - AUTH_NET_LOGIN_ID=${AUTH_NET_LOGIN_ID:-}
-        - AUTH_NET_TRANS_KEY=${AUTH_NET_TRANS_KEY:-}
-        - AUTH_NET_API_URL=${AUTH_NET_API_URL:-}
         
         # Field encryption settings
         - FIELD_ENCRYPTION_KEY=${FIELD_ENCRYPTION_KEY_SWIM:-}
+        - EMAIL_ADMIN_USER=${EMAIL_ADMIN_USER:-}
       volumes:
         - ./media:/app/media
         #- ./staticfiles:/app/staticfiles  # removing this as this was overwriting what was in the container.
